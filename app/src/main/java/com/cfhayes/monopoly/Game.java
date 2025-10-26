@@ -11,6 +11,7 @@ public class Game {
     private List<Player> players;
     private Board board;
     private Dice dice;
+    private CardDeck cardDeck;
     private int currentPlayerIndex;
     private boolean gameRunning;
     private Scanner scanner;
@@ -19,6 +20,7 @@ public class Game {
         this.players = new ArrayList<>();
         this.board = new Board();
         this.dice = new Dice();
+        this.cardDeck = new CardDeck();
         this.currentPlayerIndex = 0;
         this.gameRunning = false;
         this.scanner = new Scanner(System.in);
@@ -102,8 +104,19 @@ public class Game {
         if (space instanceof Property) {
             Property property = (Property) space;
             handlePropertyLanding(player, property);
+        } else if (space instanceof SpecialSpace) {
+            SpecialSpace specialSpace = (SpecialSpace) space;
+            
+            // Handle card spaces specially
+            if (space.getName().toLowerCase().contains("chance")) {
+                handleCardSpace(player, Card.CardType.CHANCE);
+            } else if (space.getName().toLowerCase().contains("community chest")) {
+                handleCardSpace(player, Card.CardType.COMMUNITY_CHEST);
+            } else {
+                // Handle other special spaces normally
+                specialSpace.handleLanding(player);
+            }
         }
-        // Additional space types can be handled here (taxes, chance, etc.)
     }
     
     /**
@@ -189,9 +202,62 @@ public class Game {
     }
     
     /**
+     * Handle card spaces (Chance and Community Chest)
+     */
+    private void handleCardSpace(Player player, Card.CardType cardType) {
+        Card card;
+        if (cardType == Card.CardType.CHANCE) {
+            card = cardDeck.drawChanceCard();
+        } else {
+            card = cardDeck.drawCommunityChestCard();
+        }
+        
+        System.out.println("You drew: " + card.getDescription());
+        card.execute(player, this);
+    }
+    
+    /**
+     * Handle property landing from a card (avoids recursive card drawing)
+     */
+    public void handlePropertyLandingFromCard(Player player, Property property) {
+        if (property.getOwner() == null) {
+            // Property is unowned, offer to buy
+            System.out.println("This property costs $" + property.getPrice() + ". Buy it? (y/n)");
+            String response = scanner.nextLine().toLowerCase();
+            
+            if (response.equals("y")) {
+                if (player.getMoney() >= property.getPrice()) {
+                    player.subtractMoney(property.getPrice());
+                    property.setOwner(player);
+                    player.addProperty(property);
+                    System.out.println("You bought " + property.getName() + "!");
+                } else {
+                    System.out.println("You don't have enough money to buy " + property.getName() + 
+                                     "! You have $" + player.getMoney() + " but it costs $" + property.getPrice() + ".");
+                }
+            } else if (response.equals("n")) {
+                System.out.println("You declined to buy " + property.getName() + ".");
+            }
+        } else if (!property.getOwner().equals(player)) {
+            // Property is owned by someone else, pay rent
+            int rent = property.getRent();
+            player.subtractMoney(rent);
+            property.getOwner().addMoney(rent);
+            System.out.println("Paid $" + rent + " rent to " + property.getOwner().getName());
+        }
+    }
+    
+    /**
      * Get the game board (for testing)
      */
     public Board getBoard() {
         return board;
+    }
+    
+    /**
+     * Get the card deck (for testing)
+     */
+    public CardDeck getCardDeck() {
+        return cardDeck;
     }
 }

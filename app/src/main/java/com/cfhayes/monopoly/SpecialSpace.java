@@ -48,13 +48,13 @@ public class SpecialSpace extends BoardSpace {
                 break;
                 
             case "community chest":
-                System.out.println("Community Chest - draw a card! (not implemented yet)");
-                // TODO: Implement Community Chest cards
+                // Card drawing will be handled by the Game class
+                System.out.println("Community Chest - draw a card!");
                 break;
                 
             case "chance":
-                System.out.println("Chance - draw a card! (not implemented yet)");
-                // TODO: Implement Chance cards
+                // Card drawing will be handled by the Game class
+                System.out.println("Chance - draw a card!");
                 break;
                 
             default:
